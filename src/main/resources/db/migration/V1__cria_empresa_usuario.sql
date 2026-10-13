@@ -1,0 +1,34 @@
+CREATE TABLE empresa (
+		id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		nome_fantasia VARCHAR(100) NOT NULL,
+		razao_social VARCHAR(100),
+		cnpj VARCHAR(14) UNIQUE NOT NULL CHECK (cnpj ~ '^[0-9A-Z]{12}[0-9]{2}$'),
+		telefone VARCHAR(11),
+		ativa BOOLEAN NOT NULL,
+		cep VARCHAR(8) NOT NULL,
+		rua VARCHAR(100) NOT NULL,
+		numero VARCHAR(30) NOT NULL,
+		bairro VARCHAR(100) NOT NULL,
+		cidade VARCHAR(100) NOT NULL,
+		uf CHAR(2) NOT NULL,
+		complemento VARCHAR(100),
+		criado_em TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+		atualizado_em TIMESTAMPTZ
+);
+
+CREATE TABLE usuario(
+	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	empresa_id BIGINT NOT NULL,
+	nome VARCHAR(100) NOT NULL,
+	email VARCHAR(100) UNIQUE NOT NULL,
+	senha_hash VARCHAR(255) NOT NULL,
+	perfil VARCHAR(30) NOT NULL CHECK(perfil IN ('ADMIN', 'TECNICO', 'ATENDENTE')),
+	ativo BOOLEAN NOT NULL,
+	criado_em TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	atualizado_em TIMESTAMPTZ,
+
+	FOREIGN KEY (empresa_id) REFERENCES empresa(id)
+
+);
+
+CREATE INDEX idx_usuario_empresa_id ON usuario (empresa_id);
