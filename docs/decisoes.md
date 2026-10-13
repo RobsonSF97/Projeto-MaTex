@@ -84,3 +84,25 @@ Uma decisão aceita não é apagada: se mudar, cria-se uma nova ADR que a substi
 - ✅ Controle total sobre tipos, constraints e índices.
 - ✅ Uma divergência entre entidade e tabela faz a aplicação falhar ao subir, em vez de falhar em produção.
 - ⚠️ Os scripts SQL precisam ser versionados no repositório. Caso contrário, ninguém consegue recriar o banco. A evolução natural é adotar uma ferramenta de migração (Flyway).
+
+**Convenção dos scripts:**
+- Local: `src/main/resources/db/migration/`, o local padrão do Flyway.
+- Nome: `V<versão>__<descrição>.sql`, com **dois** underscores. Exemplo: `V2__cria_tabela_cliente.sql`.
+- Os scripts rodam em ordem de versão, cada um uma única vez.
+- **Um script já aplicado nunca é editado.** Toda mudança vira um novo script com a próxima versão.
+
+---
+
+## ADR-006: CNPJ alfanumérico armazenado sem máscara
+
+**Status:** Aceita · 2026-10-12
+
+**Contexto:** A partir de julho de 2026, a Receita Federal passou a emitir CNPJs alfanuméricos: as 12 primeiras posições aceitam letras e números, e os 2 dígitos verificadores continuam numéricos.
+
+**Decisão:** O CNPJ é armazenado em `VARCHAR(14)`, sem máscara e em letras maiúsculas, com `CHECK` validando o formato `^[0-9A-Z]{12}[0-9]{2}$`. A tela exibe e aceita o CNPJ com máscara, e a aplicação remove a formatação antes de salvar.
+
+**Consequências:**
+- ✅ Atende assistências abertas antes e depois da mudança.
+- ✅ Buscas por CNPJ são feitas por igualdade simples, sem lidar com formatação.
+- ⚠️ O cálculo dos dígitos verificadores precisa seguir a regra nova, que converte letras em valores numéricos.
+- ⚠️ Nunca usar tipo numérico: perderia letras e zeros à esquerda.
