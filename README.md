@@ -24,6 +24,7 @@ A documentação visual evolui junto com o projeto:
 - [Modelo de dados](docs/modelo-de-dados.md) – Diagrama entidade-relacionamento
 - [Fluxos](docs/fluxos.md) – Diagramas de sequência das funcionalidades
 - [Decisões técnicas](docs/decisoes.md) – Registro das decisões de arquitetura (ADRs)
+- [Tecnologias e recursos do Java](docs/tecnologias.md) – Versões utilizadas e recursos da linguagem com exemplos
 
 ## 📋 FUNCIONALIDADES
 

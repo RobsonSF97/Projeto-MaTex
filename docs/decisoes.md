@@ -106,3 +106,42 @@ Uma decisão aceita não é apagada: se mudar, cria-se uma nova ADR que a substi
 - ✅ Buscas por CNPJ são feitas por igualdade simples, sem lidar com formatação.
 - ⚠️ O cálculo dos dígitos verificadores precisa seguir a regra nova, que converte letras em valores numéricos.
 - ⚠️ Nunca usar tipo numérico: perderia letras e zeros à esquerda.
+- ⚠️ O `@CNPJ` do Hibernate Validator (9.1.3) valida apenas CNPJ numérico por padrão. O formato alfanumérico exige `@CNPJ(format = CNPJ.Format.ALPHANUMERIC)`, que está marcado como `@Incubating` (a API pode mudar). A validação dos dígitos verificadores ainda será implementada.
+
+---
+
+## ADR-007: Auditoria por callbacks do ciclo de vida JPA
+
+**Status:** Aceita · 2026-10-21
+
+**Contexto:** Todas as entidades registram `criado_em` e `atualizado_em`. Definir essas datas manualmente nos services espalha a regra e permite esquecimentos. Esquecer o `atualizado_em` não gera erro: o dado fica errado em silêncio.
+
+**Alternativas consideradas:**
+- Definir as datas manualmente no service antes do `save`.
+- `@CreationTimestamp` e `@UpdateTimestamp`, específicos do Hibernate. O `@UpdateTimestamp` preenche o campo já no INSERT.
+- `@PrePersist` e `@PreUpdate`, do padrão JPA.
+
+**Decisão:** As datas ficam em um `@Embeddable Auditoria`, sem setters públicos, com os métodos `registrarCriacao()` e `registrarAtualizacao()`. Cada entidade os chama nos seus callbacks `@PrePersist` e `@PreUpdate`. A coluna `criado_em` é mapeada com `updatable = false`.
+
+**Consequências:**
+- ✅ Nenhum service precisa lembrar de definir as datas.
+- ✅ `atualizado_em` permanece `null` até a primeira alteração real.
+- ✅ Usa apenas JPA padrão, sem anotações específicas do Hibernate.
+- ⚠️ Os dois callbacks se repetem em cada entidade. Na terceira entidade auditada, extrair para um `@EntityListeners` compartilhado.
+- ⚠️ `criado_por` e `atualizado_por` ficam para depois. Avaliar o Spring Data JPA Auditing (`@CreatedBy` + `AuditorAware`) quando o login existir.
+
+---
+
+## ADR-008: Normalização do e-mail na entidade
+
+**Status:** Aceita · 2026-10-21
+
+**Contexto:** `Joao@Email.com` e `joao@email.com` são a mesma caixa postal, mas passam como valores diferentes pelo `UNIQUE` do banco. Normalizar em cada service espalha a regra e permite esquecimentos.
+
+**Decisão:** O `Usuario` normaliza o e-mail (`strip()` + `toLowerCase(Locale.ROOT)`) em todos os seus pontos de entrada: o construtor e o método de alteração de e-mail. A regra fica no método estático `Usuario.normalizarEmail`, reutilizado também nas buscas por e-mail, como no login.
+
+**Consequências:**
+- ✅ É impossível salvar um e-mail fora do padrão pela aplicação.
+- ✅ A mesma regra é usada para gravar e para buscar.
+- ⚠️ Inserts manuais no banco não passam pela entidade. Se isso virar um risco, adicionar `CHECK (email = lower(email))` em uma migração.
+- ⚠️ Evolução possível: um Value Object `Email` (record) que se normaliza ao ser criado.
