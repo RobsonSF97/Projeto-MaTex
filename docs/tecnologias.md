@@ -106,6 +106,29 @@ Junto com o `strip()`, outras adições do Java 11 a `String`: `isBlank()`, `lin
 
 ---
 
+## Spring Data JPA: consultas derivadas do nome do método
+
+Os repositories são **interfaces sem implementação**. O Spring Data lê o nome do método e gera a consulta em tempo de inicialização.
+
+```java
+// UsuarioRepository.java
+public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+    boolean existsByEmail(String email);
+}
+```
+
+| Prefixo | Retorno típico | SQL gerado (aproximado) |
+|---------|----------------|--------------------------|
+| `existsBy...` | `boolean` | `SELECT ... WHERE email = ? FETCH FIRST 1 ROWS ONLY`: para no primeiro registro, sem carregar a entidade |
+| `findBy...` | `Optional<T>`, `List<T>` | `SELECT * ... WHERE email = ?`: carrega a entidade inteira |
+| `countBy...` | `long` | `SELECT COUNT(*) ... WHERE ...` |
+
+Se o nome do método citar um atributo que não existe na entidade, **a aplicação não sobe**. O erro aparece na inicialização, e não em produção.
+
+`JpaRepository` já traz `save`, `findById`, `findAll`, `delete`... Em um sistema multi-tenant, `findById` e `findAll` **não filtram por empresa**. Ver [ADR-001](decisoes.md#adr-001--multi-tenancy-por-coluna-discriminadora).
+
+---
+
 ## Recursos do Java moderno ainda não usados (candidatos)
 
 Recursos que devem aparecer conforme o projeto crescer. Ao serem usados, sobem para a seção "Recursos do Java em uso".
